@@ -33,6 +33,13 @@ public class MetricalIntegTest {
     }
 
     @Test
+    public void testSimpleEvent() {
+        a.event("my-event");
+        assertEquals("@v:restlessrobot.metrical:1\n"
+                + "@e:1400000000000:my-event:\n", handler.get());
+    }
+
+    @Test
     public void testSimpleIntegerEvent() {
         a.event("my-event", m("my-metric", 10, Unit.MILLISECONDS));
         assertEquals("@v:restlessrobot.metrical:1\n"
