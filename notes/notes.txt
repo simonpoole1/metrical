@@ -1,0 +1,139 @@
+Analytics requirements
+======================
+
+Two types of metric:
+ - Record a numeric snapshot metric.
+ - Count events.
+
+Both metrics could be logged raw or aggregated before logging.  We can aggregate later when we're
+processing the metrics log, so the purpose of aggregating in the app is purely to reduce log sizes.
+
+When we aggregate, we have a choice of e.g.:
+   50+10+20 or 80/3
+The former retains the detail (minus timestamps), the latter is more succinct.
+
+Scopes provide a set of breakdowns.  E.g. in the minecraft app, you might have a minecraft scope that
+includes breakdowns like game-mode ("creative" vs "survival"), number-of-players etc.
+
+Some breakdowns are global - record once per log file.  Some breakdowns are per-metric.  Some are per-scope.
+
+
+You could attach a metric to multiple scopes (no inheritance)
+
+------------------------------------
+
+New idea
+========
+
+Metrics and breakdowns and counters are simply a list of log entries. You log a metric, or you log a count, or you log a breakdown.
+
+breakdown:global:platform:screen-size:1024x768
+metric:queue-size:200
+count:clicks:1
+
+Breakdowns are part of a breakdown-set. E.g. the example above provides a "screen-size" breakdown that's part of the "platform" set.
+Breakdowns can be global or targeted.  Global breakdowns apply to all metrics, but targeted ones only apply to metrics that name that breakdown-set.
+
+E.g.:
+
+scope:minecraft:global
+scope:raknet:global
+breakdown:targeted:minecraft:game-type:survival
+breakdown:targeted:minecraft:local:false
+breakdown:targeted:raknet:version:1.0
+metric:queue-size:200:minecraft,raknet
+
+This approach means we don't need to keep track of the breakdowns internally, but to interpret the logs you need to read through from the start.
+If we do track the breakdowns internally, each log file could repeat the current breakdowns, which would make them easier to work with.
+You could have a script which denormalises the logs into a fully-expanded format.
+
+A particular breakdown value applies from the point in time that it is logged, until it is replaced with a new value or deleted.
+
+E.g
+breakdown:clear:raknet:version
+scope:clear:raknet
+
+
+In theory we could abbreviate more, e.g.:
+
+breakdown-set:2:minecraft
+breakdown-set:3:raknet
+metric-name:1:queue-size
+metric:1:200:2,3
+
+but it makes the metric logs less readable, so probably isn't desirable during development.
+
+We should at least abbreviate the keywords:
+
+b:g:platform:screen-size:1024x768
+m:queue-size:200
+c:clicks:1
+b:t:minecraft:game-type:survival
+b:t:minecraft:local:false
+b:t:raknet:version:1.0
+m:queue-size:200:minecraft,raknet
+
+
+Analytics.
+Analytics.breakdown(MetricsScope.PLATFORM,  "screen-size", "1024x768");
+Analytics.breakdown(MetricsScope.MINECRAFT, "game-type", "survival");
+Analytics.metric("incoming-packet-queue-size", 200, MetricsScope.RAKNET, MetricsScope.MINECRAFT);
+Analytics.metric(
+
+
+segment.io approach
+-------------------
+Events/metrics:
+Analytics.track(eventName, new EventProperties( [event metrics / breakdowns] );
+
+Screen views:
+Analytics.screen(screenName, new EventProperties( [event metrics / breakdowns] );
+
+Google Analytics approach
+-------------------------
+Events:
+tracker.send(new HitBuilders.EventBuilder()
+    .setCategory(category).setAction(action).setLabel(label).build());
+
+Timings:
+tracker.send(new HitBuilders.TimingBuilder()
+    .setCategory(category).setVariable(name).setLabel(label).setValue(value).build());
+
+Screen views:
+tracker.setScreenName(path);  tracker.send(new HitBuilders.AppViewBuilder().build());
+
+My approach
+-----------
+ * Event
+ * Metric
+ * Scope
+ * Dimension
+
+Every metric is associated with an event.  Every dimension is associated with a scope.  Scopes are
+associated with events.
+
+
+MetricsScope PLATFORM_SCOPE =
+    analytics.scope("My scope").dimension("screen-size", "1024x768").dimension("age", 10).build;
+PLATFORM_SCOPE = PLATFORM_SCOPE.dimension("screen-size", "1280x1024").build();
+PLATFORM_SCOPE.dimension("screen-size", "1280x1024");
+
+RAKNET_SCOPE.dimension("My dimension", "blah");
+
+analytics.event(MONITOR_EVENT)
+    .metric(QUEUE_SIZE_METRIC, 100)
+    .metric(PACKET_PROCESSING_RATE_METRIC, 495)
+    .metric(ROUND_TRIP_LATENCY, 220)
+    .scopes(RAKNET_SCOPE, MINECRAFT_SCOPE)
+    .dispatch();
+
+analytics.scopes(RAKNET_SCOPE, MINECRAFT_SCOPE)
+    .event(MONITOR_EVENT, QUEUE_SIZE_METRIC, 100, PACKET_PROCESSING_RATE_METRIC, 495, ROUND_TRIP_LATENCY, 220);
+
+MetricsScopeSet scope = analytics.scopes(RAKNET_SCOPE, MINECRAFT_SCOPE);
+scope.event(MONITOR_EVENT, QUEUE_SIZE_METRIC, 100, PACKET_PROCESSING_RATE_METRIC, 495, ROUND_TRIP_LATENCY, 220);
+scope.event(MINECRAFT_DISCONNECT, CONNECT_DURATION, 39454);
+RAKNET_SCOPE.reset();
+
+analytics.withScopes(RAKNET_SCOPE, MINECRAFT_SCOPE)
+    .event(MONITOR_EVENT, QUEUE_SIZE_METRIC, 100, PACKET_PROCESSING_RATE_METRIC, 495, ROUND_TRIP_LATENCY, 220);
