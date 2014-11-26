@@ -9,8 +9,9 @@ import java.util.List;
 import lombok.Data;
 
 /**
-* Created by simon on 09/06/14.
-*/
+ * Representation of a Metrical event.  Events have a name and a timestamp, and can have zero or
+ * more metrics attached.  They may also have a metrics context.
+ */
 @Data
 public class MetricalEvent {
     /*
@@ -26,9 +27,21 @@ public class MetricalEvent {
         }
     };
 
+    /**
+     * @return The name of this event
+     */
     private final String name;
+    /**
+     * @return An immutable list of the metrics attached to this event
+     */
     private final List<MetricalMetric<? extends Number>> metrics;
+    /**
+     * @return An immutable list of the contexts attached to this event
+     */
     private final List<MetricalContext> contexts;
+    /**
+     * @return The time that this event was created (in milliseconds since the epoch)
+     */
     private final long timestamp;
 
     private MetricalEvent(String name, List<MetricalMetric<? extends Number>> metrics,
@@ -39,15 +52,15 @@ public class MetricalEvent {
         this.timestamp = timeProvider.currentTimeMillis();
     }
 
-    public static MetricalEventBuilder builder() {
+    static MetricalEventBuilder builder() {
         return new MetricalEventBuilder();
     }
 
-    public static void setTimeProvider(TimeProvider timeProvider) {
+    static void setTimeProvider(TimeProvider timeProvider) {
         MetricalEvent.timeProvider = timeProvider;
     }
 
-    public static class MetricalEventBuilder {
+    static class MetricalEventBuilder {
         private String name;
         private List<MetricalMetric<? extends Number>> metrics = new LinkedList<>();
         private List<MetricalContext> contexts = new LinkedList<>();

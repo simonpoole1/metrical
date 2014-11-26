@@ -1,7 +1,8 @@
 package restlessrobot.metrical;
 
 /**
- * Created by simon on 11/06/14.
+ * Interface for generating MetricalEvent timestamps.  Currently only used for mocking timestamps
+ * for testing.
  */
 public interface TimeProvider {
     long currentTimeMillis();

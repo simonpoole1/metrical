@@ -25,7 +25,6 @@ public class SimpleMetricalFormatter implements MetricalFormatter {
     private static final String METRIC_KEY = "m";
     private static final String CONTEXT_KEY = "c";
     private static final String DIMENSION_KEY = "d";
-    private static final String CONTEXT_GLOBAL_FLAG = "g";
     private static final int VERSION_NO = 1;
     private static final String VERSION_LINE = LINE_PREFIX + VERSION_KEY + ":restlessrobot.metrical:" + VERSION_NO + LINE_SEPARATOR;
     private static final Joiner colonJoiner = Joiner.on(':').useForNull("");
@@ -94,8 +93,7 @@ public class SimpleMetricalFormatter implements MetricalFormatter {
         sb.append(LINE_PREFIX);
         sb.append(colonJoiner.join(
                 CONTEXT_KEY,
-                context.getName(),
-                context.isGlobal() ? CONTEXT_GLOBAL_FLAG : null
+                context.getName()
                 ));
         sb.append(LINE_SEPARATOR);
 
@@ -106,8 +104,7 @@ public class SimpleMetricalFormatter implements MetricalFormatter {
                     DIMENSION_KEY,
                     context.getName(),
                     dimension.getName(),
-                    formatValue(dimension.getValue()),
-                    dimension.getUnit().getShortName()));
+                    formatValue(dimension.getValue())));
             sb.append(LINE_SEPARATOR);
         }
         return sb.toString();

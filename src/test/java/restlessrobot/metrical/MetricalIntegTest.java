@@ -16,7 +16,7 @@ import static restlessrobot.metrical.Metrical.c;
 public class MetricalIntegTest {
     public static final long MOCK_TIME = 1_400_000_000_000L;
     private final TextCaptureMetricalHandler handler = new TextCaptureMetricalHandler();
-    private final Metrical a = new Metrical(handler);
+    private final Metrical m = new Metrical(handler);
 
     @Before
     public void setUp() throws Exception {
@@ -34,14 +34,14 @@ public class MetricalIntegTest {
 
     @Test
     public void testSimpleEvent() {
-        a.event("my-event");
+        m.event("my-event");
         assertEquals("@v:restlessrobot.metrical:1\n"
                 + "@e:1400000000000:my-event:\n", handler.get());
     }
 
     @Test
     public void testSimpleIntegerEvent() {
-        a.event("my-event", m("my-metric", 10, Unit.MILLISECONDS));
+        m.event("my-event", m("my-metric", 10, Unit.MILLISECONDS));
         assertEquals("@v:restlessrobot.metrical:1\n"
                 + "@e:1400000000000:my-event:\n"
                 + "@m:1400000000000:my-event:my-metric:10:ms:\n", handler.get());
@@ -49,7 +49,7 @@ public class MetricalIntegTest {
 
     @Test
     public void testSimpleFloatEvent() {
-        a.event("my-event", m("my-metric", 3.51471f, Unit.PERCENT));
+        m.event("my-event", m("my-metric", 3.51471f, Unit.PERCENT));
         assertEquals("@v:restlessrobot.metrical:1\n"
                 + "@e:1400000000000:my-event:\n"
                 + "@m:1400000000000:my-event:my-metric:3.515:%:\n", handler.get());
@@ -57,7 +57,7 @@ public class MetricalIntegTest {
 
     @Test
     public void testMultiMetricEvent() {
-        a.event("my-event",
+        m.event("my-event",
                 m("metric1", 10, Unit.MILLISECONDS),
                 m("metric2", 3.5f, Unit.PERCENT));
         assertEquals("@v:restlessrobot.metrical:1\n"
@@ -69,11 +69,11 @@ public class MetricalIntegTest {
 
     @Test
     public void testSingleContextNoDimensions() {
-        MetricalContext platformContext = c("platform", true);
-        a.addContexts(platformContext);
-        a.event("my-event", m("metric1", 10, Unit.MILLISECONDS));
+        MetricalContext platformContext = c("platform");
+        Metrical m2 = m.withContexts(platformContext);
+        m2.event("my-event", m("metric1", 10, Unit.MILLISECONDS));
         assertEquals("@v:restlessrobot.metrical:1\n"
-                + "@c:platform:g\n"
+                + "@c:platform\n"
                 + "@e:1400000000000:my-event:platform\n"
                 + "@m:1400000000000:my-event:metric1:10:ms:platform\n",
             handler.get());
@@ -81,13 +81,13 @@ public class MetricalIntegTest {
 
     @Test
     public void testSingleContextStringDimension() {
-        MetricalContext platformContext = c("platform", true,
+        MetricalContext platformContext = c("platform",
                 d("screen-size", "1024x768"));
-        a.addContexts(platformContext);
-        a.event("my-event", m("metric1", 10, Unit.MILLISECONDS));
+        Metrical m2 = m.withContexts(platformContext);
+        m2.event("my-event", m("metric1", 10, Unit.MILLISECONDS));
         assertEquals("@v:restlessrobot.metrical:1\n"
-                        + "@c:platform:g\n"
-                        + "@d:platform:screen-size:1024x768:\n"
+                        + "@c:platform\n"
+                        + "@d:platform:screen-size:1024x768\n"
                         + "@e:1400000000000:my-event:platform\n"
                         + "@m:1400000000000:my-event:metric1:10:ms:platform\n",
                 handler.get());
@@ -95,13 +95,13 @@ public class MetricalIntegTest {
 
     @Test
     public void testSingleContextIntDimension() {
-        MetricalContext platformContext = c("platform", true,
-                d("ram", 4, Unit.GIGABYTES));
-        a.addContexts(platformContext);
-        a.event("my-event", m("metric1", 10, Unit.MILLISECONDS));
+        MetricalContext platformContext = c("platform",
+                d("ram", "4GB"));
+        Metrical m2 = m.withContexts(platformContext);
+        m2.event("my-event", m("metric1", 10, Unit.MILLISECONDS));
         assertEquals("@v:restlessrobot.metrical:1\n"
-                        + "@c:platform:g\n"
-                        + "@d:platform:ram:4:GB\n"
+                        + "@c:platform\n"
+                        + "@d:platform:ram:4GB\n"
                         + "@e:1400000000000:my-event:platform\n"
                         + "@m:1400000000000:my-event:metric1:10:ms:platform\n",
                 handler.get());
@@ -109,13 +109,13 @@ public class MetricalIntegTest {
 
     @Test
     public void testSingleContextFloatDimension() {
-        MetricalContext platformContext = c("platform", true,
-                d("ram", 2.4f, Unit.GIGABYTES));
-        a.addContexts(platformContext);
-        a.event("my-event", m("metric1", 10, Unit.MILLISECONDS));
+        MetricalContext platformContext = c("platform",
+                d("ram", "2.4GB"));
+        Metrical m2 = m.withContexts(platformContext);
+        m2.event("my-event", m("metric1", 10, Unit.MILLISECONDS));
         assertEquals("@v:restlessrobot.metrical:1\n"
-                        + "@c:platform:g\n"
-                        + "@d:platform:ram:2.400:GB\n"
+                        + "@c:platform\n"
+                        + "@d:platform:ram:2.4GB\n"
                         + "@e:1400000000000:my-event:platform\n"
                         + "@m:1400000000000:my-event:metric1:10:ms:platform\n",
                 handler.get());
@@ -124,21 +124,19 @@ public class MetricalIntegTest {
 
     @Test
     public void testSingleContextWithManyDimensions() {
-        MetricalContext platformContext = c("platform", true,
+        MetricalContext platformContext = c("platform",
                 d("screen-size", "1024x768"),
-                d("ram", 1, Unit.GIGABYTES),
+                d("ram", "1GB"),
                 d("os", "Android"),
-                d("os-version", "4.4.3"),
-                d("my-float", 98.2567f, Unit.NONE));
-        a.addContexts(platformContext);
-        a.event("my-event", m("metric1", 10, Unit.MILLISECONDS));
+                d("os-version", "4.4.3"));
+        Metrical m2 = m.withContexts(platformContext);
+        m2.event("my-event", m("metric1", 10, Unit.MILLISECONDS));
         assertEquals("@v:restlessrobot.metrical:1\n"
-                        + "@c:platform:g\n"
-                        + "@d:platform:screen-size:1024x768:\n"
-                        + "@d:platform:ram:1:GB\n"
-                        + "@d:platform:os:Android:\n"
-                        + "@d:platform:os-version:4.4.3:\n"
-                        + "@d:platform:my-float:98.26:\n"
+                        + "@c:platform\n"
+                        + "@d:platform:screen-size:1024x768\n"
+                        + "@d:platform:ram:1GB\n"
+                        + "@d:platform:os:Android\n"
+                        + "@d:platform:os-version:4.4.3\n"
                         + "@e:1400000000000:my-event:platform\n"
                         + "@m:1400000000000:my-event:metric1:10:ms:platform\n",
                 handler.get());
@@ -146,21 +144,21 @@ public class MetricalIntegTest {
 
     @Test
     public void testMultipleContexts() {
-        MetricalContext platformContext = c("platform", true,
+        MetricalContext platformContext = c("platform",
                 d("screen-size", "1024x768"),
-                d("ram", 1, Unit.GIGABYTES));
-        MetricalContext requestContext = c("request", false,
+                d("ram", "1GB"));
+        MetricalContext requestContext = c("request",
                 d("operation", "get"),
                 d("type", "my-type"));
-        a.addContexts(platformContext, requestContext);
-        a.event("my-event", m("metric1", 10, Unit.MILLISECONDS));
+        Metrical m2 = m.withContexts(platformContext, requestContext);
+        m2.event("my-event", m("metric1", 10, Unit.MILLISECONDS));
         assertEquals("@v:restlessrobot.metrical:1\n"
-                        + "@c:platform:g\n"
-                        + "@d:platform:screen-size:1024x768:\n"
-                        + "@d:platform:ram:1:GB\n"
-                        + "@c:request:\n"
-                        + "@d:request:operation:get:\n"
-                        + "@d:request:type:my-type:\n"
+                        + "@c:platform\n"
+                        + "@d:platform:screen-size:1024x768\n"
+                        + "@d:platform:ram:1GB\n"
+                        + "@c:request\n"
+                        + "@d:request:operation:get\n"
+                        + "@d:request:type:my-type\n"
                         + "@e:1400000000000:my-event:platform,request\n"
                         + "@m:1400000000000:my-event:metric1:10:ms:platform,request\n",
                 handler.get());
@@ -168,17 +166,17 @@ public class MetricalIntegTest {
 
     @Test
     public void testWithContextsNoOuterContext() {
-        MetricalContext requestContext = c("request", false,
+        MetricalContext requestContext = c("request",
                 d("operation", "get"),
                 d("type", "my-type"));
-        Metrical a2 = a.withContexts(requestContext);
+        Metrical m2 = m.withContexts(requestContext);
 
-        a2.event("event1", m("metric1", 10, Unit.MILLISECONDS));
-        a.event("event2", m("metric2", 1, Unit.PERCENT));
+        m2.event("event1", m("metric1", 10, Unit.MILLISECONDS));
+        m.event("event2", m("metric2", 1, Unit.PERCENT));
         assertEquals("@v:restlessrobot.metrical:1\n"
-                        + "@c:request:\n"
-                        + "@d:request:operation:get:\n"
-                        + "@d:request:type:my-type:\n"
+                        + "@c:request\n"
+                        + "@d:request:operation:get\n"
+                        + "@d:request:type:my-type\n"
                         + "@e:1400000000000:event1:request\n"
                         + "@m:1400000000000:event1:metric1:10:ms:request\n"
                         + "@e:1400000000000:event2:\n"
@@ -189,29 +187,29 @@ public class MetricalIntegTest {
 
     @Test
     public void testWithContextsWithOuterContext() {
-        MetricalContext platformContext = c("platform", true,
+        MetricalContext platformContext = c("platform",
                 d("screen-size", "1024x768"),
-                d("ram", 1, Unit.GIGABYTES));
-        a.addContexts(platformContext);
+                d("ram", "1GB"));
+        Metrical m2 = m.withContexts(platformContext);
 
-        a.event("event1", m("metric1", 1, Unit.PERCENT));
+        m2.event("event1", m("metric1", 1, Unit.PERCENT));
 
-        MetricalContext requestContext = c("request", false,
+        MetricalContext requestContext = c("request",
                 d("operation", "get"),
                 d("type", "my-type"));
-        Metrical a2 = a.withContexts(requestContext);
+        Metrical m3 = m2.withContexts(requestContext);
 
-        a2.event("event2", m("metric2", 10, Unit.MILLISECONDS));
-        a.event("event3", m("metric3", 1, Unit.PERCENT));
+        m3.event("event2", m("metric2", 10, Unit.MILLISECONDS));
+        m2.event("event3", m("metric3", 1, Unit.PERCENT));
         assertEquals("@v:restlessrobot.metrical:1\n"
-                        + "@c:platform:g\n"
-                        + "@d:platform:screen-size:1024x768:\n"
-                        + "@d:platform:ram:1:GB\n"
+                        + "@c:platform\n"
+                        + "@d:platform:screen-size:1024x768\n"
+                        + "@d:platform:ram:1GB\n"
                         + "@e:1400000000000:event1:platform\n"
                         + "@m:1400000000000:event1:metric1:1:%:platform\n"
-                        + "@c:request:\n"
-                        + "@d:request:operation:get:\n"
-                        + "@d:request:type:my-type:\n"
+                        + "@c:request\n"
+                        + "@d:request:operation:get\n"
+                        + "@d:request:type:my-type\n"
                         + "@e:1400000000000:event2:platform,request\n"
                         + "@m:1400000000000:event2:metric2:10:ms:platform,request\n"
                         + "@e:1400000000000:event3:platform\n"
@@ -227,37 +225,37 @@ public class MetricalIntegTest {
         MetricalEvent.setTimeProvider(timeProvider);
         handler.setTimeProvider(timeProvider);
 
-        MetricalContext platformContext = c("platform", true,
+        MetricalContext platformContext = c("platform",
                 d("screen-size", "1024x768"),
-                d("ram", 1, Unit.GIGABYTES));
-        a.addContexts(platformContext);
+                d("ram", "1GB"));
+        Metrical m2 = m.withContexts(platformContext);
 
-        a.event("event1", m("metric1", 1, Unit.PERCENT));
+        m2.event("event1", m("metric1", 1, Unit.PERCENT));
 
         timeProvider = buildTimeProvider(MOCK_TIME + 1_000);
         MetricalEvent.setTimeProvider(timeProvider);
         handler.setTimeProvider(timeProvider);
 
-        a.event("event1", m("metric1", 5, Unit.PERCENT));
+        m2.event("event1", m("metric1", 5, Unit.PERCENT));
 
         timeProvider = buildTimeProvider(MOCK_TIME + 600_000);
         MetricalEvent.setTimeProvider(timeProvider);
         handler.setTimeProvider(timeProvider);
 
-        a.event("event1", m("metric1", 2, Unit.PERCENT));
+        m2.event("event1", m("metric1", 2, Unit.PERCENT));
 
         assertEquals(     "@v:restlessrobot.metrical:1\n"
-                        + "@c:platform:g\n"
-                        + "@d:platform:screen-size:1024x768:\n"
-                        + "@d:platform:ram:1:GB\n"
+                        + "@c:platform\n"
+                        + "@d:platform:screen-size:1024x768\n"
+                        + "@d:platform:ram:1GB\n"
                         + "@e:1400000000000:event1:platform\n"
                         + "@m:1400000000000:event1:metric1:1:%:platform\n"
                         + "@e:1400000001000:event1:platform\n"
                         + "@m:1400000001000:event1:metric1:5:%:platform\n"
                         + "@v:restlessrobot.metrical:1\n"
-                        + "@c:platform:g\n"
-                        + "@d:platform:screen-size:1024x768:\n"
-                        + "@d:platform:ram:1:GB\n"
+                        + "@c:platform\n"
+                        + "@d:platform:screen-size:1024x768\n"
+                        + "@d:platform:ram:1GB\n"
                         + "@e:1400000600000:event1:platform\n"
                         + "@m:1400000600000:event1:metric1:2:%:platform\n",
                 handler.get());

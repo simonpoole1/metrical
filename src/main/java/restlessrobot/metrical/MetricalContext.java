@@ -8,41 +8,53 @@ import java.util.Map;
 import lombok.Data;
 
 /**
- * Created by simon on 06/06/14.
+ * Object representing a Metrical metrics context.
+ *
+ * A metrics context has a name, which is used as an identifier and should have a consistent meaning
+ * throughout your application.  The name can be any arbitrary string.
+ *
+ * A metrics context usually has one or more attached dimensions which describe the context.  A
+ * context without dimensions is currently pointless.
+ *
+ * This class cannot be instantiated directly, but should instead be created using the
+ * Metrical.c(...) method.
  */
 @Data
 public class MetricalContext {
+    /**
+     * @return The name of this metrics context
+     */
     private final String name;
-    private final boolean isGlobal;
+    /**
+     * @return Immutable map of the dimensions attached to this context, indexed by name
+     */
     private final Map<String, MetricalDimension> dimensions;
 
-    public MetricalContext(String name, boolean isGlobal,
-            Map<String, MetricalDimension> dimensions) {
+    /**
+     * Creates a MetricalContext instance with the given name and dimensions
+     *
+     * @param name
+     * @param dimensions
+     */
+    MetricalContext(String name, Map<String, MetricalDimension> dimensions) {
         this.name = name;
-        this.isGlobal = isGlobal;
         this.dimensions = ImmutableMap.copyOf(dimensions);
     }
 
-    public static MetricalContextBuilder builder() {
+    static MetricalContextBuilder builder() {
         return new MetricalContextBuilder();
     }
 
-    public static class MetricalContextBuilder {
+    static class MetricalContextBuilder {
         private String name;
-        private boolean isGlobal;
         private Map<String, MetricalDimension> dimensions = new LinkedHashMap<>();
 
-        public MetricalContextBuilder name(String name) {
+        MetricalContextBuilder name(String name) {
             this.name = name;
             return this;
         }
 
-        public MetricalContextBuilder isGlobal(boolean isGlobal) {
-            this.isGlobal = isGlobal;
-            return this;
-        }
-
-        public MetricalContextBuilder dimensions(MetricalDimension... dimensions) {
+        MetricalContextBuilder dimensions(MetricalDimension... dimensions) {
             if (dimensions != null) {
                 for (MetricalDimension dimension : dimensions) {
                     if (dimension != null)
@@ -52,23 +64,13 @@ public class MetricalContext {
             return this;
         }
 
-        public MetricalContextBuilder dimension(String name, String value) {
+        MetricalContextBuilder dimension(String name, String value) {
             dimensions.put(name, new MetricalDimension(name, value));
             return this;
         }
 
-        public MetricalContextBuilder dimension(String name, int value, Unit unit) {
-            dimensions.put(name, new MetricalDimension(name, value, unit));
-            return this;
-        }
-
-        public MetricalContextBuilder dimension(String name, float value, Unit unit) {
-            dimensions.put(name, new MetricalDimension(name, value, unit));
-            return this;
-        }
-
-        public MetricalContext build() {
-            return new MetricalContext(name, isGlobal, dimensions);
+        MetricalContext build() {
+            return new MetricalContext(name, dimensions);
         }
     }
 

@@ -1,23 +1,25 @@
 package restlessrobot.metrical;
 
 /**
- * Created by simon on 09/06/14.
+ * Representation of a metrics dimension.  A dimension has a name and a value.  The value is a
+ * String.
+ *
+ * This class cannot be instantiated directly, but should instead be created using the
+ * Metrical.d(...) method.
  */
 public class MetricalDimension {
+    /**
+     * @return The name of this dimension
+     */
     private final String name;
+    /**
+     * @return The value of this dimension
+     */
     private final Object value;
-    private final Unit unit;
 
-    public MetricalDimension(String name, Number value, Unit unit) {
+    MetricalDimension(String name, String value) {
         this.name = name;
         this.value = value;
-        this.unit = unit;
-    }
-
-    public MetricalDimension(String name, String value) {
-        this.name = name;
-        this.value = value;
-        this.unit = Unit.NONE;
     }
 
     public String getName() {
@@ -26,9 +28,5 @@ public class MetricalDimension {
 
     public Object getValue() {
         return value;
-    }
-
-    public Unit getUnit() {
-        return unit;
     }
 }

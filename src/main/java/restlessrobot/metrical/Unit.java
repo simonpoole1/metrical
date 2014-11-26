@@ -1,7 +1,11 @@
 package restlessrobot.metrical;
 
 /**
- * Created by simon on 06/06/14.
+ * Representations of various units for use in Metrical.
+ *
+ * TODO: Switch to something like https://java.net/projects/unitsofmeasurement/
+ * Ideally we'd use some off-the-shelf units library, but they're all way more heavy-weight than
+ * we need, and there are no ratified standards yet.
  */
 public enum Unit {
     NONE(""),

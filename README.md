@@ -1,10 +1,10 @@
 # Metrical - simple but powerful metrics reporting
 
-Metrical is a lightweight, experimental metrics-reporting API.  It's designed to overcome some of the limitations in existing metrics APIs, providing richer analytics through powerful (but simple) support for custom metrics.  It aims to be small and fast, suitable for mobile and embedded devices through to enterprise applications.
+Metrical is an *experimental* lightweight, metrics-reporting API.  It's designed to overcome some of the limitations in existing metrics APIs, providing richer analytics through powerful support for custom metrics.  It aims to be simple, small and fast, suitable for everything from mobile and embedded devices through to enterprise applications.
 
-At the moment, Metrical is just a good idea with an experimental (Java) implementation, and it won't be genuinely useful until analytics tools are available which can surface the richer metric data.  Help is welcome from people who want to use or improve the library, build or integrate with analytics tools, or port to other languages.
+At the moment, Metrical is just a good idea with an experimental (Java) implementation, and it hasn't been used in any production systems.  It won't be genuinely useful until analytics tools are available which can surface the richer metric data.  Help is welcome from people who want to use or improve the library, build or integrate with analytics tools, or port to other languages.
 
-Metrical is composed of:
+The Java implementation is composed of:
 * A core reporting API
 * A selection of handlers - these might write reported metrics to files, post them to Google Play Services, or send them to HTTP endpoints etc.
 
@@ -19,12 +19,9 @@ An **Event** represents the thing that caused a metric to be reported.  It may b
 Associating multiple metrics with a single event gives you much richer analytics than you can get with conventional metrics APIs.  E.g. if you report a "viewPlaylist" event with a "latency" metric and a "playlistSize" metric, then the raw Metrical data will theoretically support graphing playlistSize against latency.  In a traditional metrics system, there would be no direct link between the two metrics.
 
 ### Dimensions and Contexts
-**Dimensions** provide additional context for an event.  Say we have `request-completed` and `request-failed` events, both with `latency` metrics attached.  Our reporting system can probably filter the latency metrics according to whether we're interested in successful or failed requests.  But what if we want to drill down into the failed metrics?  E.g. what if we want to see how many came from "GET" vs "POST" requests, or whether the client was iOS, Android or web?  Dimensions let you provide that additional context data by attaching zero or more Dimensions to an Event.  E.g. `operation=delete`, `os-version=4.4.4`, `client=ios` etc.  Dimensions are similar to metrics, but the value is more commonly a string instead of a number.  Every metric attached to an event is associated with that event's dimensions, allowing richer aggregation and filtering in your analytics system.
+**Dimensions** provide additional context for an event.  Say we have `request-completed` and `request-failed` events, both with `latency` metrics attached.  Our reporting system can probably filter the latency metrics according to whether we're interested in successful or failed requests.  But what if we want to drill down into the failed metrics?  E.g. what if we want to see how many came from "GET" vs "POST" requests, or whether the client was iOS, Android or web?  Dimensions let you provide that additional context data by attaching zero or more Dimensions to an Event.  E.g. `operation=delete`, `os-version=4.4.4`, `client=ios` etc.  Dimensions are similar to metrics, but the value is a string instead of a number.  Every metric attached to an event is associated with that event's dimensions, allowing richer aggregation and filtering in your analytics system.
 
-A **Context** is a collection of dimensions - a broader description of the current context.  They are a convenient way of attaching a set of dimensions repeatedly to a series of events.  Multiple contexts can be associated with an event.  E.g. in an Android app you may create a global context that describes the device and the Android OS (e.g. screen-size, os-version etc), and you may create additional contexts for the UI state (e.g. current activity) or network state (e.g. wifi vs mobile data) that you attach to metrics from different subsystems.  Metrics emitted from a thread-pool might attach a context which describes the configuration of the pool, whereas the jobs run by that thread-pool might attach a context which describes the job.
-
-### Global Contexts
-Contexts can be global or non-global.  A non-global context is attached only to events that specifically reference it.  A global context is implicitly attached to all reported events.
+A **Context** is a collection of dimensions - a broader description of the current context.  They are a convenient way of attaching a set of dimensions repeatedly to a series of events.  Multiple contexts can be associated with an event.  E.g. in an Android app you may create a context that describes the device and the Android OS (e.g. screen-size, os-version etc), and you may create additional contexts for the UI state (e.g. current activity) or network state (e.g. wifi vs mobile data) that you attach to metrics from different subsystems.  Metrics emitted from a thread-pool might attach a context which describes the configuration of the pool, whereas the jobs run by that thread-pool might attach a context which describes the job.
 
 ### Efficient representation
 Metrical's approach to metrics is designed to allow efficient representation of rich metrics data.  Contexts and dimensions can be attached to multiple metrics/events without repetition, and metrics can be associated together via events.  Future (hypothetical) analytics tools could use this richness to allow you to filter and aggregate metrics in useful ways to spot underlying patterns and trends. 
@@ -67,21 +64,8 @@ Create a context:
 // A context with two dimensions
 MetricalContext context = Metrical.c(
     "SyncService",  // context name
-    false,      // not global
     Metrical.d("backgroundSyncing", "on"),
     Metrical.d("wifiOnly", "on"));
-```
-
-Create a global context:
-```java
-import android.os.Build;
-MetricalContext context = Metrical.c(
-    "Platform",    // context name
-    true,          // global
-    Metrical.d("os", "android"),
-    Metrical.d("osVersion", Build.VERSION.RELEASE),
-    Metrical.d("deviceModel", Build.MODEL),
-    Metrical.d("deviceManufacturer", Build.MANUFACTURER));
 ```
 
 Report a metric with a given context
